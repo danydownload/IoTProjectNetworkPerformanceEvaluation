@@ -3,8 +3,17 @@
 
 #include <WiFi.h>
 
+extern WiFiClient wifiClient;
+
 void connectToWiFi(const char* ssid, const char* password);
 
 void setLocalIp(IPAddress &localIp);
+
+void setupMDNS();
+
+
+
+
+
 
 #endif

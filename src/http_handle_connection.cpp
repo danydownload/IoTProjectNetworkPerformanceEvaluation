@@ -1,48 +1,32 @@
 #include "http_handle_connection.h"
+#include "utils.h"
+#include "mqtt_handle_connection.h"
 
+int http_port = 80;
 
-boolean connectToHttpServer(HTTPClient& httpClient, const IPAddress& ip, int port, const String& path) {
-    String url = "http://";
-    url += ip.toString();
-    url += ":";
-    url += String(port);
-    url += path;
+AsyncWebServer server(http_port);
 
-    Serial.print("Connecting to HTTP server: " + url + " ... \n");
-
-    if (!httpClient.begin(url)) {
-        Serial.println("Failed to connect");
-        return false;
-    }
-    else {
-        Serial.println("Connected to HTTP server");
-        return true;
-    }
-}
-
-
-void closeConnectionToHttpServer(HTTPClient& httpClient) {
-    httpClient.end();
-    delay(1000);
-}
-
-int sendHttpPost(HTTPClient& httpClient, const String& payload)
+void setup_http_server()
 {
-    String data = "message=" + payload;
-    httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    httpClient.addHeader("Content-Length", String(data.length()));
+    server.on("/latency", HTTP_POST, latency_handler);
 
-    int httpCode = httpClient.POST(data);
-
-    if (httpCode == HTTP_CODE_OK) {
-        String response = httpClient.getString();
-        return httpCode;
-        
-    } else {
-        Serial.println("Failed to send data");
-        return -1;
-    }
-
+    server.on("/throughput", HTTP_POST, throughput_handler);
 }
 
+void latency_handler(AsyncWebServerRequest *request)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    String message = request->arg("message");
+    request->send(200, "text/plain", "Message with timestamp received!");
+    long long latency_ms = compute_latency(message, tv);
+    // Serial.print("HTTP Latency (ms): ");
+    // Serial.println(latency_ms);
+    mqttClient.publish(topic_nodered_http_latency , String(latency_ms).c_str());
+}
 
+void throughput_handler(AsyncWebServerRequest *request)
+{
+    String message = request->arg("message");
+    request->send(200, "text/plain", "Message received!");
+}
