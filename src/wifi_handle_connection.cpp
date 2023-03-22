@@ -1,7 +1,5 @@
-#include "wifi.h"
-#include <ESPmDNS.h>
+#include "wifi_handle_connection.h"
 
-WiFiClient wifiClient;
 
 void connectToWiFi(const char *ssid, const char *password)
 {
@@ -22,22 +20,3 @@ void connectToWiFi(const char *ssid, const char *password)
   Serial.println("Connected to WiFi");
 }
 
-void setLocalIp(IPAddress &localIp)
-{
-  localIp = WiFi.localIP();
-  Serial.print("Local IP: ");
-  Serial.println(localIp);
-}
-
-void setupMDNS()
-{
-  if (!MDNS.begin("Esp32-Server"))
-  {
-    Serial.println("Error setting up mDNS.");
-    while (1)
-    {
-      delay(1000);
-    }
-  }
-  Serial.println("mDNS started");
-}

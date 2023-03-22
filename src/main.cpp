@@ -1,76 +1,75 @@
-#include <Arduino.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
-#include <ESP32Ping.h>
-#include <ESPAsyncWebServer.h>
+#include <Arduino.h>
 #include <time.h>
-#include "constants.h"
+#include "messages.h"
 #include "utils.h"
 #include "wifi_data.h"
-#include "wifi_handle_connection.h"
 #include "mqtt_handle_connection.h"
-#include "coap_handle_connection.h"
-#include "http_handle_connection.h"
+#include "wifi_handle_connection.h"
 
-// Global variables
-IPAddress localIp;
+
+BluetoothSerial SerialBT;
+WiFiClient wifiClient;
+
+
+// #define DEVICE_ADDRESS "B0:3C:DC:D0:5B:2D"
+const char *bluetooth_server = "ESP32 Server";
+const char *mqtt_server = "MSI.local";
+
+const char *mqttServer = "MSI.local";
+const int mqttPort = 1883;
+PubSubClient mqttClient = PubSubClient(mqttServer, mqttPort, wifiClient);
 
 const char *ntpServer = "it.pool.ntp.org";
 const long gmtOffset_sec = 0;	  /*ECT OFFSET +1 HOURS(3600 SEC)*/
 const int daylightOffset_sec = 0; /*1 hour daylight offset*/
 
+const char *mqtt_nodered_throughput_topic = "nodered/bt/mqtt/throughput";
+const char *coap_nodered_throughput_topic = "nodered/bt/coap/throughput";
+const char *http_nodered_throughput_topic = "nodered/bt/http/throughput";
 
-String timestamp_received_s = "";
-String timestamp_received_us = "";
+const char *mqtt_nodered_packet_loss_topic = "nodered/bt/mqtt/packet_loss";
+const char *coap_nodered_packet_loss_topic = "nodered/bt/coap/packet_loss";
+const char *http_nodered_packet_loss_topic = "nodered/bt/http/packet_loss";
 
-// Prototype
 void printLocalTime();
-
 
 void setup()
 {
 	Serial.begin(115200);
-	
-	// WiFi Connection
+	SerialBT.begin("ESP32 Client", 1); // master mode
+
+	// Connect to WiFi
 	connectToWiFi(ssid, password);
-	setLocalIp(localIp);
-	Serial.print("Local IP: ");
-	Serial.println(localIp);
-
-	// MDNS Connection
-	setupMDNS();
-
-	// MQTT Connection
-	connectToMQTT(mqttServer, mqttPort, mqttUser, mqttPassword, mqttClient);
-	subscribeToTopics();
-
-	// COAP Connection
-	coap_set_endpoints();
-	coap.start();
 
 	// NTP Connection
 	configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 	printLocalTime();
 
-	// HTTP Connection
-	setup_http_server();
-	server.begin();
+	// MQTT Connection
+	connectToMQTT(mqttServer, mqttPort);
 }
 
 void loop()
 {
-	if (millis() - last_mqtt_message_received > 60000)
-	{
-		Serial.println("No message received in 60 seconds");
-		ESP.restart();
-	}
-
-	checkMQTTConnection(mqttClient);
-
-	coap_call_loop();
+	checkMQTTConnection();
 
 	configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+	if (!SerialBT.connect("ESP32 Server"))
+	{
+		Serial.println("Failed to connect to server");
+		delay(1000);
+	}
+	else
+	{
+		Serial.println("Connected to server");
 
+		compute_packet_loss_and_latency_and_throughput("MQTT", "", "hello", "");
+		compute_packet_loss_and_latency_and_throughput("COAP", "hello", "", "");
+		compute_packet_loss_and_latency_and_throughput("HTTP", "http://MSI.local:8080", "", "PUT");
+		
+		delay(1000);
+	}
 }
 
 // FUNCTIONS
