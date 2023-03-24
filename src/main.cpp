@@ -114,7 +114,6 @@ void loop()
 	// Serial.print(", Free space: ");
 	// Serial.println(free_flash);
 
-	// Da spostare in setup TODO
 	if (!WiFi.hostByName("Esp32-Server.local", serverIp))
 	{
 		Serial.println("DNS resolution failed");
@@ -122,9 +121,11 @@ void loop()
 		if (serverIp == INADDR_NONE)
 		{
 			Serial.println("MDNS resolution failed");
+			ipReceived = false;
 			return;
 		}
 	}
+	ipReceived = true;
 	Serial.printf("IP esp32-server: %s\n", serverIp.toString().c_str());
 	Ping.ping(serverIp);
 
@@ -144,7 +145,6 @@ void loop()
 	int32_t rssi = WiFi.RSSI();
 	mqttClient.publish(topic_nodered_rssi, String(rssi).c_str(), 0);
 
-	ipReceived = true;
 
 	if (ipReceived)
 	{
