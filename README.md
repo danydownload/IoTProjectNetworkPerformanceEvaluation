@@ -1,6 +1,6 @@
 # IoT Project Network Performance Evaluation
 
-This project was created for the "IoT" class exam at UNIMORE university. The aim of this project is to evaluate the network performance of WiFi and Bluetooth for the ESP32 microcontroller.
+This project was created for the "IoT" class exam at UNIMORE university by Daniele Tortoli. The aim of this project is to evaluate the network performance of WiFi and Bluetooth for the ESP32 microcontroller.
 
 The repository is divided into four branches:
 
@@ -30,3 +30,4 @@ This branch contains the code and files for the Bluetooth server.
 ## Getting Started
 
 To get started with this project, clone the repository and checkout the desired branch for the technology you want to evaluate.
+
